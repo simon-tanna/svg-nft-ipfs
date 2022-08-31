@@ -64,10 +64,11 @@ contract SvgNft is VRFConsumerBaseV2, ERC721 {
         // this ensures that the owner of the NFT the address who made the request in reqestNFT
         address monsterOwner = s_requestIdToSender[requestId];
         uint256 newTokenId = s_tokenCounter;
-        _safeMint(monsterOwner, newTokenId);
         // set the type of monster using mod.
         uint256 moddedRng = randomWords[0] % 100;
         // this returns a number 0 - 99
+        Monster monsterType = getMonsterFromModdedRng(moddedRng);
+        _safeMint(monsterOwner, newTokenId);
     }
 
     function getMonsterFromModdedRng(uint256 moddedRng)
