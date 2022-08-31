@@ -14,3 +14,4 @@
 - Can we randomise colour attributes of monster NFT?
 - Is there a max number of monsters that an address can mint per day/hour/week?
 
+ 
