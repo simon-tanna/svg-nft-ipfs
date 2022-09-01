@@ -3,11 +3,14 @@ pragma solidity ^0.8.0;
 
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-error SvgNFT__RangeOutOfBounds;
+error SvgNFT__RangeOutOfBounds();
+error SvgNft__NeedMoreETH();
+error SvgNft__TransferFailed();
 
-contract SvgNft is VRFConsumerBaseV2, ERC721 {
+contract SvgNft is VRFConsumerBaseV2, ERC721URIStorage, Ownable {
     // Type declaration for types of monster
     enum Monster {
         LOVE,
@@ -32,21 +35,34 @@ contract SvgNft is VRFConsumerBaseV2, ERC721 {
     // NFT Variables
     uint256 public s_tokenCounter;
     uint256 internal constant MAX_CHANCE_VALUE = 100;
+    string[] internal s_monsterTokenUris;
+    uint256 internal immutable i_mintFee;
+
+    //Events
+    event NftRequested(uint256 indexed requestId, address requester);
+    event NftMinted(Monster monsterType, address minter);
 
     constructor(
         address vrfCoordinatorV2,
         uint64 subscriptionId,
         bytes32 gasLane,
-        uint32 callbackGasLimit
+        uint32 callbackGasLimit,
+        string[3] memory monsterTokenUris,
+        uint256 mintFee
     ) VRFConsumerBaseV2(vrfCoordinatorV2) ERC721("Random Monster NFT", "RMN") {
         i_vrfCoordinator = VRFCoordinatorV2Interface(vrfCoordinatorV2);
         i_subscriptionId = subscriptionId;
         i_gasLane = gasLane;
         i_callbackGasLimit = callbackGasLimit;
+        s_monsterTokenUris = monsterTokenUris;
+        i_mintFee = mintFee;
     }
 
     // this function requests a random number for our NFT
-    function requestNFT() public returns (uint256 requestId) {
+    function requestNFT() public payable returns (uint256 requestId) {
+        if (msg.value < i_mintFee) {
+            revert SvgNft__NeedMoreETH();
+        }
         requestId = i_vrfCoordinator.requestRandomWords(
             i_gasLane,
             i_subscriptionId,
@@ -55,6 +71,8 @@ contract SvgNft is VRFConsumerBaseV2, ERC721 {
             NUM_WORDS
         );
         s_requestIdToSender[requestId] = msg.sender;
+        // emit an event
+        emit NftRequested(requestId, msg.sender);
     }
 
     function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords)
@@ -69,6 +87,18 @@ contract SvgNft is VRFConsumerBaseV2, ERC721 {
         // this returns a number 0 - 99
         Monster monsterType = getMonsterFromModdedRng(moddedRng);
         _safeMint(monsterOwner, newTokenId);
+        // _setTokenURI is a function pulled from ERC721URIStorage
+        // it sets the TokenURI
+        _setTokenURI(newTokenId, s_monsterTokenUris[uint256(monsterType)]);
+        emit NftMinted(monsterType, monsterOwner);
+    }
+
+    function withdraw() public onlyOwner {
+        uint256 amount = address(this).balance;
+        (bool success, ) = payable(msg.sender).call{value: amount}("");
+        if (!success) {
+            revert SvgNft__TransferFailed();
+        }
     }
 
     function getMonsterFromModdedRng(uint256 moddedRng)
@@ -79,7 +109,7 @@ contract SvgNft is VRFConsumerBaseV2, ERC721 {
         uint256 sum = 0;
         uint256[5] memory chanceArray = getChanceOfMonster();
         // loop to get type of monster from chance array
-        for (uint256 i =0; i < chanceArray.length; i++) {
+        for (uint256 i = 0; i < chanceArray.length; i++) {
             if (moddedRng >= sum && moddedRng < sum + chanceArray[i]) {
                 return Monster(i);
             }
@@ -94,7 +124,23 @@ contract SvgNft is VRFConsumerBaseV2, ERC721 {
         return [20, 40, 60, 80, MAX_CHANCE_VALUE];
     }
 
-    function tokenURI(uint256) public view override returns (string memory) {
-        // making change here
+    // function tokenURI(uint256) public view override returns (string memory) {
+    //     // making change here
+    // }
+
+    function getMintFee() public view returns (uint256) {
+        return i_mintFee;
+    }
+
+    function getMonsterTokenUris(uint256 index)
+        public
+        view
+        returns (string memory)
+    {
+        return s_monsterTokenUris[index];
+    }
+
+    function getTokenCounter() public view returns (uint256) {
+        return s_tokenCounter;
     }
 }
