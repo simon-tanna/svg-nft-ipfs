@@ -27,7 +27,22 @@ const deploySvgNft: DeployFunction = async function (
 		const transactionReceipt = await transactionResponse.wait();
 		subscriptionId = transactionReceipt.events[0].args.subId;
 		await vrfCoordinatorV2Mock.fundSubscription(subscriptionId, FUND_AMOUNT);
+	} else {
+		vrfCoordinatorV2Address = networkConfig[chainId].vrfCoordinatorV2;
+		subscriptionId = networkConfig[chainId].subscriptionId;
 	}
+
+	log("------------------------------");
+
+	const args = [
+		vrfCoordinatorV2Address,
+		subscriptionId,
+		networkConfig[chainId].gasLane,
+		networkConfig[chainId].mintFee,
+		networkConfig[chainId].callbackGasLimit,
+		// monterTokenUris
+		networkConfig[chainId].mintFee,
+	];
 };
 
 export default deploySvgNft;
