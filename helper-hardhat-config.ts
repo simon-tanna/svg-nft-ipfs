@@ -10,6 +10,8 @@ export interface networkConfigItem {
 	mintFee?: string;
 }
 
+const CHAINLINK_SUBSCRIPTION_ID = process.env.CHAINLINK_SUBSCRIPTION_ID;
+
 export interface networkConfigInfo {
 	[key: number]: networkConfigItem;
 }
@@ -22,6 +24,15 @@ export const networkConfig: networkConfigInfo = {
 			"0xd89b2bf150e3b9e13446986e571fb9cab24b13cea0a43ea20a6049a85cc807cc", // 30 gwei
 		mintFee: "10000000000000000", // 0.01 ETH
 		callbackGasLimit: "500000", // 500,000 gas
+	},
+	80001: {
+		name: "matic",
+		vrfCoordinatorV2: "0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed",
+		gasLane:
+			"0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f",
+		callbackGasLimit: "500000",
+		mintFee: "10000000000000000",
+		subscriptionId: CHAINLINK_SUBSCRIPTION_ID,
 	},
 	// Price Feed Address, values can be obtained at https://docs.chain.link/docs/reference-contracts
 	// Default one is ETH/USD contract on Kovan

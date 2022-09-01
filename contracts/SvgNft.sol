@@ -47,7 +47,7 @@ contract SvgNft is VRFConsumerBaseV2, ERC721URIStorage, Ownable {
         uint64 subscriptionId,
         bytes32 gasLane,
         uint32 callbackGasLimit,
-        string[3] memory monsterTokenUris,
+        string[5] memory monsterTokenUris,
         uint256 mintFee
     ) VRFConsumerBaseV2(vrfCoordinatorV2) ERC721("Random Monster NFT", "RMN") {
         i_vrfCoordinator = VRFCoordinatorV2Interface(vrfCoordinatorV2);
