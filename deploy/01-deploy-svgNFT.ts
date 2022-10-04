@@ -1,9 +1,6 @@
 import {
-	developmentChains,
-	VERIFICATION_BLOCK_CONFIRMATIONS,
 	networkConfig,
 } from "../helper-hardhat-config";
-import verify from "../utils/verify";
 import storeMonsters from "../utils/uploadToPinata";
 import { DeployFunction } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";

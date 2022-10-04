@@ -1,5 +1,7 @@
 # Sample Hardhat Project
 
+21:47:47 / 1:07:54:30
+
 This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
 
 Try running some of the following tasks:

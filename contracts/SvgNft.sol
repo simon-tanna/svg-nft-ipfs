@@ -6,10 +6,14 @@ import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+// custom error rules
 error SvgNFT__RangeOutOfBounds();
 error SvgNft__NeedMoreETH();
 error SvgNft__TransferFailed();
 
+// VRFConsumerBaseV2 is for the generation of randomness on chain
+// ERC721URIStorage will store the token URIs on chain. This will use more gas
+//
 contract SvgNft is VRFConsumerBaseV2, ERC721URIStorage, Ownable {
     // Type declaration for types of monster
     enum Monster {
@@ -75,6 +79,31 @@ contract SvgNft is VRFConsumerBaseV2, ERC721URIStorage, Ownable {
         emit NftRequested(requestId, msg.sender);
     }
 
+    // this function will determine the chance of getting a particular monster
+    // it returns a uint256 of size 5 in memory
+    function getChanceOfMonster() public pure returns (uint256[5] memory) {
+        return [20, 40, 60, 80, MAX_CHANCE_VALUE];
+    }
+
+    // this function uses the getChanceOfMonster function to return
+    function getMonsterFromModdedRng(uint256 moddedRng)
+        public
+        pure
+        returns (Monster)
+    {
+        uint256 sum = 0;
+        uint256[5] memory chanceArray = getChanceOfMonster();
+        // loop to get type of monster from chance array
+        for (uint256 i = 0; i < chanceArray.length; i++) {
+            if (moddedRng >= sum && moddedRng < sum + chanceArray[i]) {
+                return Monster(i);
+            }
+            sum += chanceArray[i];
+        }
+        revert SvgNFT__RangeOutOfBounds();
+    }
+
+    // this function fulfills the randomness of the monster type minted
     function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords)
         internal
         override
@@ -93,35 +122,13 @@ contract SvgNft is VRFConsumerBaseV2, ERC721URIStorage, Ownable {
         emit NftMinted(monsterType, monsterOwner);
     }
 
+    // this is the withdraw function that allows a minted
     function withdraw() public onlyOwner {
         uint256 amount = address(this).balance;
         (bool success, ) = payable(msg.sender).call{value: amount}("");
         if (!success) {
             revert SvgNft__TransferFailed();
         }
-    }
-
-    function getMonsterFromModdedRng(uint256 moddedRng)
-        public
-        pure
-        returns (Monster)
-    {
-        uint256 sum = 0;
-        uint256[5] memory chanceArray = getChanceOfMonster();
-        // loop to get type of monster from chance array
-        for (uint256 i = 0; i < chanceArray.length; i++) {
-            if (moddedRng >= sum && moddedRng < sum + chanceArray[i]) {
-                return Monster(i);
-            }
-            sum += chanceArray[i];
-        }
-        revert SvgNFT__RangeOutOfBounds();
-    }
-
-    // this function will determine the chance of getting a particular monster
-    // it returns a uint256 of size 3 in memory
-    function getChanceOfMonster() public pure returns (uint256[5] memory) {
-        return [20, 40, 60, 80, MAX_CHANCE_VALUE];
     }
 
     // function tokenURI(uint256) public view override returns (string memory) {
