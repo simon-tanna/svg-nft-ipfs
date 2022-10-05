@@ -4,12 +4,14 @@ pragma solidity ^0.8.0;
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+// Ownable ontract module provides a basic access control mechanism
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 // custom error rules
 error SvgNFT__RangeOutOfBounds();
 error SvgNft__NeedMoreETH();
 error SvgNft__TransferFailed();
+error SvgNft_AlreadyInitialized();
 
 // VRFConsumerBaseV2 is for the generation of randomness on chain
 // ERC721URIStorage will store the token URIs on chain. This will use more gas
@@ -34,6 +36,7 @@ contract SvgNft is VRFConsumerBaseV2, ERC721URIStorage, Ownable {
 
     // VRF helpers
     // this mapping is invoked in the requestNFT and fulfillRandomWords functions to assign the requestId to msg.sender
+    // if this is not called, the msg.sender would be the chainlinkVRF!
     mapping(uint256 => address) public s_requestIdToSender;
 
     // NFT Variables
@@ -41,6 +44,7 @@ contract SvgNft is VRFConsumerBaseV2, ERC721URIStorage, Ownable {
     uint256 internal constant MAX_CHANCE_VALUE = 100;
     string[] internal s_monsterTokenUris;
     uint256 internal immutable i_mintFee;
+    bool private s_initialized;
 
     //Events
     event NftRequested(uint256 indexed requestId, address requester);
@@ -49,7 +53,7 @@ contract SvgNft is VRFConsumerBaseV2, ERC721URIStorage, Ownable {
     constructor(
         address vrfCoordinatorV2,
         uint64 subscriptionId,
-        bytes32 gasLane,
+        bytes32 gasLane, // this is the keyHash
         uint32 callbackGasLimit,
         string[5] memory monsterTokenUris,
         uint256 mintFee
@@ -60,6 +64,7 @@ contract SvgNft is VRFConsumerBaseV2, ERC721URIStorage, Ownable {
         i_callbackGasLimit = callbackGasLimit;
         s_monsterTokenUris = monsterTokenUris;
         i_mintFee = mintFee;
+        // _initializeContract(monsterTokenUris);
     }
 
     // this function requests a random number for our NFT
@@ -131,14 +136,10 @@ contract SvgNft is VRFConsumerBaseV2, ERC721URIStorage, Ownable {
         }
     }
 
-    // function tokenURI(uint256) public view override returns (string memory) {
-    //     // making change here
-    // }
-
     function getMintFee() public view returns (uint256) {
         return i_mintFee;
     }
-
+    // returns an array og
     function getMonsterTokenUris(uint256 index)
         public
         view
@@ -150,4 +151,16 @@ contract SvgNft is VRFConsumerBaseV2, ERC721URIStorage, Ownable {
     function getTokenCounter() public view returns (uint256) {
         return s_tokenCounter;
     }
+
+    function getInitialisation() public view returns (bool) {
+        return s_initialized;
+    }
+
+    // function _initializeContract(string[5] memory monsterTokenUris) private {
+    //     if (s_initialized) {
+    //         revert SvgNft_AlreadyInitialized();
+    //     }
+    //     s_monsterTokenUris = monsterTokenUris;
+    //     s_initialized = true;
+    // }
 }
